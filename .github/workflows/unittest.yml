@@ -12,7 +12,7 @@ on:
 jobs:
   unittesting:
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}
+    environment: dev
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v2
