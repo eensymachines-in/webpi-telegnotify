@@ -5,7 +5,7 @@ on:
     branches:
       - v.nightly.0
 env:
-    DEVICEREG_URL: ${{ secrets.DEVICEREG_URL }}
+    DEVICEREG_URL: ${{ vars.dev.DEVICEREG_URL }}
 #     - BOT_BASEURL:${{ vars.BOT_BASEURL }}
 #     - BOT_UNAME=${{ vars.BOT_UNAME }}
 #     - BOT_TOK=${{ vars.BOT_TOK }}
