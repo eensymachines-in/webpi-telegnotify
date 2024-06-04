@@ -4,10 +4,15 @@ on:
   push:
     branches:
       - v.nightly.0
-
+# env:
+#     - DEVICEREG_URL:${{ vars.DEVICEREG_URL }}
+#     - BOT_BASEURL:${{ vars.BOT_BASEURL }}
+#     - BOT_UNAME=${{ vars.BOT_UNAME }}
+#     - BOT_TOK=${{ vars.BOT_TOK }}
 jobs:
   unittesting:
     runs-on: ubuntu-latest
+    
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v2
@@ -16,9 +21,6 @@ jobs:
           go-version: '1.22.3'
       - name: unittests
         run: |
-            export DEVICEREG_URL=${{ vars.DEVICEREG_URL }}
-            export BOT_BASEURL=${{ vars.BOT_BASEURL }}
-            export BOT_UNAME=${{ vars.BOT_UNAME }}
-            export BOT_TOK=${{ vars.BOT_TOK }}
+            echo ${{ vars.DEVICEREG_URL}}
             go clean --testcache 
             go test -v -timeout 30s -run TestTelegGetMe
