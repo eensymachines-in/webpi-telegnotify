@@ -4,11 +4,6 @@ on:
   push:
     branches:
       - v.nightly.0
-# env:
-    
-# #     - BOT_BASEURL:${{ vars.BOT_BASEURL }}
-# #     - BOT_UNAME=${{ vars.BOT_UNAME }}
-# #     - BOT_TOK=${{ vars.BOT_TOK }}
 jobs:
   unittesting:
     runs-on: ubuntu-latest
@@ -22,7 +17,13 @@ jobs:
       - name: unittests
         env:
           DEVICEREG_URL: ${{vars.DEVICEREG_URL}}
+          BOT_BASEURL: ${{ vars.BOT_BASEURL }}
+          BOT_UNAME: ${{ vars.BOT_UNAME }}
+          BOT_TOK: ${{ secrets.BOT_TOK }}
         run: |
             echo $DEVICEREG_URL
+            echo $BOT_BASEURL
+            echo $BOT_UNAME
+            echo $BOT_TOK
             go clean --testcache 
             go test -v -timeout 30s -run TestTelegGetMe
