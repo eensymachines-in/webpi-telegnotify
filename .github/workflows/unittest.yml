@@ -6,7 +6,7 @@ on:
       - v.nightly.0
 
 jobs:
-  go-linting:
+  unittesting:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -16,5 +16,9 @@ jobs:
           go-version: '1.22.3'
       - name: unittests
         run: |
+            export DEVICEREG_URL=${{ vars.DEVICEREG_URL }}
+            export BOT_BASEURL=${{ vars.BOT_BASEURL }}
+            export BOT_UNAME=${{ vars.BOT_UNAME }}
+            export BOT_TOK=${{ vars.BOT_TOK }}
             go clean --testcache 
             go test -v -timeout 30s -run TestTelegGetMe
