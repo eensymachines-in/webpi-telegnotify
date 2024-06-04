@@ -12,8 +12,7 @@ on:
 jobs:
   unittesting:
     runs-on: ubuntu-latest
-    env:
-        DEVICEREG_URL: ${{ vars.DEVICEREG_URL }}
+    environment: ${{ inputs.environment }}
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v2
@@ -22,6 +21,6 @@ jobs:
           go-version: '1.22.3'
       - name: unittests
         run: |
-            echo $DEVICEREG_URL
+            echo "${{vars.DEVICEREG_URL}}"
             go clean --testcache 
             go test -v -timeout 30s -run TestTelegGetMe
