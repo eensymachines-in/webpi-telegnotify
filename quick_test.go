@@ -18,6 +18,25 @@ import (
 func TestApi(t *testing.T) {
 	cl := &http.Client{Timeout: 5 * time.Second}
 	baseurl := "http://localhost:8080/api/devices/b8:27:eb:a5:be:48/notifications"
+
+	t.Run("invalid query param", func(t *testing.T) {
+		url := fmt.Sprintf("%s/?typ=invalidparam", baseurl)
+		not := models.Notification("Test aquaponics configuration", "b8:27:eb:a5:be:48", time.Now(), models.CfgChange(&aquacfg.Schedule{
+			Config:   1,
+			TickAt:   "11:30",
+			PulseGap: 100,
+			Interval: 500,
+		}))
+
+		byt, err := json.Marshal(not)
+		assert.Nil(t, err, "Unexpected error when marshaling bot message")
+		payload := bytes.NewBuffer(byt)
+		req, err := http.NewRequest("POST", url, payload)
+		assert.Nil(t, err, "Unexpected error when forming the request")
+		resp, err := cl.Do(req)
+		assert.Nil(t, err, "unexpected error when executing the request, do you have access to the server ?")
+		assert.Equal(t, resp.StatusCode, http.StatusBadRequest, "Unepxected response code from server")
+	})
 	t.Run("cfg change", func(t *testing.T) {
 		url := fmt.Sprintf("%s/?typ=cfgchange", baseurl)
 		not := models.Notification("Test aquaponics configuration", "b8:27:eb:a5:be:48", time.Now(), models.CfgChange(&aquacfg.Schedule{

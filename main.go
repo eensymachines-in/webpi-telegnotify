@@ -170,14 +170,14 @@ func HndlDeviceNotifics(c *gin.Context) {
 	byt, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		httperr.HttpErrOrOkDispatch(c, httperr.ErrBinding(err), log.WithFields(log.Fields{
-			"stack": "HndlDeviceNotifics/typ=cfgchange",
+			"stack": "HndlDeviceNotifics",
 		}))
 		return
 	}
 	err = json.Unmarshal(byt, &not)
 	if err != nil {
 		httperr.HttpErrOrOkDispatch(c, httperr.ErrBinding(err), log.WithFields(log.Fields{
-			"stack": "HndlDeviceNotifics/typ=cfgchange",
+			"stack": "HndlDeviceNotifics",
 		}))
 		return
 	}
