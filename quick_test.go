@@ -37,7 +37,27 @@ func TestApi(t *testing.T) {
 		assert.Nil(t, err, "unexpected error when executing the request, do you have access to the server ?")
 		assert.Equal(t, resp.StatusCode, http.StatusBadRequest, "Unepxected response code from server")
 	})
+	// NOTE: there isnt a possibility of a bad configuration - since the update is tightly guarded by cfgwatch
 	t.Run("cfg change", func(t *testing.T) {
+		url := fmt.Sprintf("%s/?typ=cfgchange", baseurl)
+		not := models.Notification("Test aquaponics configuration", "b8:27:eb:a5:be:48", time.Now(), models.CfgChange(&aquacfg.Schedule{
+			Config:   1,
+			TickAt:   "11:30",
+			PulseGap: 100,
+			Interval: 500,
+		}))
+
+		byt, err := json.Marshal(not)
+		assert.Nil(t, err, "Unexpected error when marshaling bot message")
+		payload := bytes.NewBuffer(byt)
+		req, err := http.NewRequest("POST", url, payload)
+		assert.Nil(t, err, "Unexpected error when forming the request")
+		resp, err := cl.Do(req)
+		assert.Nil(t, err, "unexpected error when executing the request, do you have access to the server ?")
+		assert.Equal(t, resp.StatusCode, http.StatusOK, "Unepxected response code from server")
+	})
+
+	t.Run("GPIO report status", func(t *testing.T) {
 		url := fmt.Sprintf("%s/?typ=cfgchange", baseurl)
 		not := models.Notification("Test aquaponics configuration", "b8:27:eb:a5:be:48", time.Now(), models.CfgChange(&aquacfg.Schedule{
 			Config:   1,

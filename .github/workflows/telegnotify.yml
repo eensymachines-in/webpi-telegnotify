@@ -1,11 +1,11 @@
-name: Unit Test 
+name: TelegNotify-Pipe
 
 on:
   push:
     branches:
       - v.nightly.0
 jobs:
-  unittesting:
+  integ_testing:
     runs-on: ubuntu-latest
     environment: dev
     env:
