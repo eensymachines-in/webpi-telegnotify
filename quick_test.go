@@ -34,7 +34,7 @@ func TestApi(t *testing.T) {
 		assert.Nil(t, err, "Unexpected error when forming the request")
 		resp, err := cl.Do(req)
 		assert.Nil(t, err, "unexpected error when executing the request, do you have access to the server ?")
-		assert.Equal(t, resp.Status, 200, "Unepxected response code from server")
+		assert.Equal(t, resp.StatusCode, http.StatusOK, "Unepxected response code from server")
 	})
 }
 
