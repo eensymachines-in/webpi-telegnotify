@@ -19,11 +19,12 @@ jobs:
         with:
           stable: 'false'
           go-version: '1.22.3'
+      - name: local gin server
+        run: |
+          nohup go run main.go&
+          echo "gin server now running .."
       - name: unittests
         run: |
-            echo $DEVICEREG_URL
-            echo $BOT_BASEURL
-            echo $BOT_UNAME
-            echo $BOT_TOK
             go clean --testcache 
             go test -v -timeout 30s -run TestTelegGetMe
+            go test -v -timeout 30s -run TestApi

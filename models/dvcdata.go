@@ -171,12 +171,11 @@ func (gps *gpioStatus) ToMessageTxt() (string, error) {
 
 /* VitalStatsData: is the object that eventually gets converted to text message in bot send */
 type vitalStats struct {
-	DeviceData  DeviceNotifcn // device details
-	AquaponeSrv bool          // indicates if the systemctl unit is working
-	CfgwatchSrv bool          // indicates if the systemctl unit is working
-	Online      bool          // indicates if the device is online, on internet
-	FreeCPU     int           // indicates percentage of CPU that is free
-	CPUUpTime   string        // indicates the cpu up time from uptime command
+	AquaponeSrv bool   `json:"aquapone_service"` // indicates if the systemctl unit is working
+	CfgwatchSrv bool   `json:"cfgwatch_service"` // indicates if the systemctl unit is working
+	Online      bool   `json:"online"`           // indicates if the device is online, on internet
+	FreeCPU     int    `json:"free_cpu"`         // indicates percentage of CPU that is free
+	CPUUpTime   string `json:"cpu_uptime"`       // indicates the cpu up time from uptime command
 }
 
 func (vs *vitalStats) ToMessageTxt() (string, error) {

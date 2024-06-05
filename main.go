@@ -162,6 +162,9 @@ func HndlDeviceNotifics(c *gin.Context) {
 	} else if typOfNotify == "gpiostat" {
 		log.Debug("Gpio status notification")
 		not = models.Notification("", "", time.Now(), models.GpioStatus(&models.Pinstat{})) // onto which the payload would be unmarshalled
+	} else if typOfNotify == "vitals" {
+		log.Debug("Vitals status notification")
+		not = models.Notification("", "", time.Now(), models.VitalStats("", "", "", "", "")) // onto which the payload would be unmarshalled
 	}
 	/* Reading the request body and that is agnostic of which notification it is */
 	byt, err := io.ReadAll(c.Request.Body)
@@ -178,7 +181,6 @@ func HndlDeviceNotifics(c *gin.Context) {
 		}))
 		return
 	}
-
 	/* Preparing the notification to be sent across to telegram */
 	msg, _ := not.ToMessageTxt()
 	log.WithFields(log.Fields{
