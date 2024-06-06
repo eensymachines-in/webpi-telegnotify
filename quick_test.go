@@ -19,7 +19,7 @@ func TestApi(t *testing.T) {
 	cl := &http.Client{Timeout: 5 * time.Second}
 	baseurl := "http://localhost:8080/api/devices/b8:27:eb:a5:be:48/notifications"
 
-	t.Run("invalid query param", func(t *testing.T) {
+	t.Run("invalid_query_param", func(t *testing.T) {
 		url := fmt.Sprintf("%s/?typ=invalidparam", baseurl)
 		not := models.Notification("Test aquaponics configuration", "b8:27:eb:a5:be:48", time.Now(), models.CfgChange(&aquacfg.Schedule{
 			Config:   1,
@@ -38,7 +38,7 @@ func TestApi(t *testing.T) {
 		assert.Equal(t, resp.StatusCode, http.StatusBadRequest, "Unepxected response code from server")
 	})
 	// NOTE: there isnt a possibility of a bad configuration - since the update is tightly guarded by cfgwatch
-	t.Run("cfg change", func(t *testing.T) {
+	t.Run("cfg_change", func(t *testing.T) {
 		url := fmt.Sprintf("%s/?typ=cfgchange", baseurl)
 		not := models.Notification("Test aquaponics configuration", "b8:27:eb:a5:be:48", time.Now(), models.CfgChange(&aquacfg.Schedule{
 			Config:   1,
@@ -57,14 +57,9 @@ func TestApi(t *testing.T) {
 		assert.Equal(t, resp.StatusCode, http.StatusOK, "Unepxected response code from server")
 	})
 
-	t.Run("GPIO report status", func(t *testing.T) {
+	t.Run("GPIO_report_status", func(t *testing.T) {
 		url := fmt.Sprintf("%s/?typ=cfgchange", baseurl)
-		not := models.Notification("Test aquaponics configuration", "b8:27:eb:a5:be:48", time.Now(), models.CfgChange(&aquacfg.Schedule{
-			Config:   1,
-			TickAt:   "11:30",
-			PulseGap: 100,
-			Interval: 500,
-		}))
+		not := models.Notification("Test aquaponics configuration", "b8:27:eb:a5:be:48", time.Now(), models.GpioStatus(models.PinStatus("Motor control relay", models.ACTUATOR, 33, models.DIGIPIN_HIGH)))
 
 		byt, err := json.Marshal(not)
 		assert.Nil(t, err, "Unexpected error when marshaling bot message")

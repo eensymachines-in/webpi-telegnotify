@@ -23,7 +23,7 @@ jobs:
         run: |
           nohup go run main.go&
           echo "gin server now running .."
-      - name: unittests
+      - name: api_tests
         run: |
             go clean --testcache 
             go test -v -timeout 30s -run TestTelegGetMe
