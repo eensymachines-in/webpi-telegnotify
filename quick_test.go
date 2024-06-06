@@ -70,6 +70,20 @@ func TestApi(t *testing.T) {
 		assert.Nil(t, err, "unexpected error when executing the request, do you have access to the server ?")
 		assert.Equal(t, resp.StatusCode, http.StatusOK, "Unepxected response code from server")
 	})
+
+	t.Run("vital_status", func(t *testing.T) {
+		url := fmt.Sprintf("%s/?typ=gpiostat", baseurl)
+		not := models.Notification("Test aquaponics configuration", "b8:27:eb:a5:be:48", time.Now(), models.VitalStats("active", "active", "HTTP/2 200", "16 7", "4d 8h"))
+
+		byt, err := json.Marshal(not)
+		assert.Nil(t, err, "Unexpected error when marshaling bot message")
+		payload := bytes.NewBuffer(byt)
+		req, err := http.NewRequest("POST", url, payload)
+		assert.Nil(t, err, "Unexpected error when forming the request")
+		resp, err := cl.Do(req)
+		assert.Nil(t, err, "unexpected error when executing the request, do you have access to the server ?")
+		assert.Equal(t, resp.StatusCode, http.StatusOK, "Unepxected response code from server")
+	})
 }
 
 func TestTelegGetMe(t *testing.T) {
