@@ -58,7 +58,7 @@ func TestApi(t *testing.T) {
 	})
 
 	t.Run("GPIO_report_status", func(t *testing.T) {
-		url := fmt.Sprintf("%s/?typ=vitals", baseurl)
+		url := fmt.Sprintf("%s/?typ=gpiostat", baseurl)
 		not := models.Notification("Test aquaponics configuration", "b8:27:eb:a5:be:48", time.Now(), models.GpioStatus(models.PinStatus("Motor control relay", models.ACTUATOR, 33, models.DIGIPIN_HIGH)))
 
 		byt, err := json.Marshal(not)
@@ -72,7 +72,7 @@ func TestApi(t *testing.T) {
 	})
 
 	t.Run("vital_status", func(t *testing.T) {
-		url := fmt.Sprintf("%s/?typ=gpiostat", baseurl)
+		url := fmt.Sprintf("%s/?typ=vitals", baseurl)
 		not := models.Notification("Test aquaponics configuration", "b8:27:eb:a5:be:48", time.Now(), models.VitalStats("active", "active", "HTTP/2 200", "16 7", "4d 8h"))
 		t.Log("Now logging the vital stats notification")
 		t.Log(not.ToMessageTxt())
