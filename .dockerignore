@@ -1,0 +1,7 @@
+*.md
+./.vscoede/
+./.github/workflows/
+./k8s
+./.gitignore
+Makefile
+*.http
