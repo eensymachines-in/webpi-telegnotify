@@ -32,10 +32,10 @@ spec:
               value: http://aqua.eensymachines.in:30001/api/devices
 
             - name: FLOG
-              value: 0
+              value: "0"
             
             - name: SILENT
-              value: 0
+              value: "0"
             
             - name: BOT_TOK
               value: 7003243457:AAFdkeOEWTXakLxz7HjyJFBkJiL8ME-tZvE
