@@ -72,3 +72,6 @@ jobs:
           
         - name: Test kubectl setup
           run: kubectl get nodes
+
+        - name: Deploy to VKE
+          run: kubectl deploy -f ./k8s/deploy.yml
