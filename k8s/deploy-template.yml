@@ -21,43 +21,32 @@ spec:
       containers:
         - name: ctn-gin
           image: kneerunjun/telegnotify:v0.0.0
+          #  DEVICEREG_URL: ${{vars.DEVICEREG_URL}}
+          # BOT_BASEURL: ${{ vars.BOT_BASEURL }}
+          # BOT_UNAME: ${{ vars.BOT_UNAME }}
+          # BOT_TOK: ${{ secrets.BOT_TOK }}
           env:
             - name: BOT_BASEURL
-              value: https://api.telegram.org/bot
+              value: ${{ vars.BOT_BASEURL }}
 
             - name: BOT_UNAME
-              value: raspb_notifybot
+              value: ${{ vars.BOT_UNAME }}
             
             - name: DEVICEREG_URL
-              value: http://aqua.eensymachines.in:30001/api/devices
+              value: ${{ vars.DEVICEREG_URL }}
 
             - name: FLOG
-              value: "0"
+              value: ${{ vars.FLOG }}
             
             - name: SILENT
-              value: "0"
+              value: ${{ SILENT }}
             
             - name: BOT_TOK
-              value: 7003243457:AAFdkeOEWTXakLxz7HjyJFBkJiL8ME-tZvE
+              value: ${{ secrets.BOT_TOK }}
 
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
           stdin: true
           tty: true
----
 
-apiVersion: v1
-kind: Service
-metadata:
- name: svc-telegnotify
-spec:
- type: NodePort
- ports:
-  - port: 8080
-    targetPort: 8080
-    nodePort: 30004
-    protocol: TCP
- selector:
-  app: api-telegnotify
-  type: gogin 

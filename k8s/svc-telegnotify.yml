@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+ name: svc-telegnotify
+spec:
+ type: NodePort
+ ports:
+  - port: 8080
+    targetPort: 8080
+    nodePort: 30004
+    protocol: TCP
+ selector:
+  app: api-telegnotify
+  type: gogin 
