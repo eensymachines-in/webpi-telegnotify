@@ -1,0 +1,45 @@
+####
+GET https://api.telegram.org/bot7003243457:AAFdkeOEWTXakLxz7HjyJFBkJiL8ME-tZvE/getUpdates
+
+####
+GET https://api.telegram.org/bot7003243457:AAFdkeOEWTXakLxz7HjyJFBkJiL8ME-tZvE/getMe
+
+
+### Seding a simple configuration change notification 
+POST http://localhost:8080/api/devices/b8:27:eb:a5:be:48/notifications?typ=cfgchange
+Content-Type: application/json
+
+{
+       "device_name":"Aquaponics pump control-I, Saidham",
+       "device_mac":"b8:27:eb:a5:be:48",
+       "dt":"2006-01-02 15:04:05",
+       "notification":{
+            "new":{
+                "config":3,
+                "tickat":"12:00",
+                "pulsegap":180,
+                "interval":7200
+            }
+       }
+}
+
+
+### Simple request to notify of the gpio status
+POST http://localhost:8080/api/devices/b8:27:eb:a5:be:48/notifications?typ=gpiostat
+Content-Type: application/json
+
+{
+       "device_name":"Aquaponics pump control-I, Saidham",
+       "device_mac":"b8:27:eb:a5:be:48",
+       "dt":"2006-01-02 15:04:05",
+       "notification":{
+            "all_pins":[
+                {
+                    "conn_name":"Aquaponics Pump relay-I",
+                    "conn_type":1,
+                    "conn_pin":33,
+                    "pin_state":0
+                }
+            ]
+       }
+}

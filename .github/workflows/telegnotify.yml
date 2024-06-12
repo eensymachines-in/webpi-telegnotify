@@ -1,0 +1,77 @@
+name: TelegNotify-Pipe
+
+on:
+  push:
+    branches:
+      - v.nightly.0
+jobs:
+  integ_testing:
+    runs-on: ubuntu-latest
+    environment: dev
+    env:
+      DEVICEREG_URL: ${{vars.DEVICEREG_URL}}
+      BOT_BASEURL: ${{ vars.BOT_BASEURL }}
+      BOT_UNAME: ${{ vars.BOT_UNAME }}
+      BOT_TOK: ${{ secrets.BOT_TOK }}
+    steps:
+
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Setup golang
+        uses: actions/setup-go@v2
+        with:
+          stable: 'false'
+          go-version: '1.22.3'
+      - name: Run Go Gin server
+        run: |
+          nohup go run main.go&
+          echo "gin server now running .."
+      
+      - name: Run API tests
+        run: |
+            go clean --testcache 
+            go test -v -timeout 30s -run TestTelegGetMe
+            go test -v -timeout 30s -run TestApi
+  docker_build: #lets get the docker container built and published.
+          runs-on: ubuntu-latest
+          needs: integ_testing
+          environment: dev
+          steps:
+            - name: Check out code
+              uses: actions/checkout@v2
+              
+            - name: Setting up docker
+              uses: docker/setup-buildx-action@v1
+              
+            
+            - name: Logging into dockerhuhb
+              run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+            
+            - name: Build & push docker image
+              run: |
+                docker build -t kneerunjun/telegnotify:v0.0.0 .
+                docker push kneerunjun/telegnotify:v0.0.0
+  vultr_k8_cluster:
+      runs-on: ubuntu-latest
+      needs: docker_build
+      environment: dev
+      steps:
+        - name: Checkout code
+          uses: actions/checkout@v2
+
+        - name: Setup kubectl
+          uses: azure/setup-kubectl@v3
+          with:
+            version: 'v1.29.4'
+
+        - name: Configure kubectl
+          run: |
+            mkdir -p $HOME/.kube && touch $HOME/.kube/config && chmod 600 $HOME/.kube/config
+            echo "${{ secrets.KUBECONFIG }}" > $HOME/.kube/config
+          
+        - name: Test kubectl setup
+          run: kubectl get nodes
+
+        - name: Deploy to VKE
+          run: kubectl apply -f ./k8s/deploy.yml
