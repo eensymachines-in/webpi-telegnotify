@@ -2,104 +2,9 @@ package models
 
 import (
 	"fmt"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/eensymachines-in/patio/aquacfg"
-)
-
-var (
-	/* Notification: generic body of the notification to be sent
-	specific notification is an attachment to this generic on
-	*/
-	Notification = func(name, mac string, dt time.Time, specific DeviceNotifcn) DeviceNotifcn {
-		return &anyNotification{
-			DeviceName:   name,
-			DeviceMac:    mac,
-			CurrDate:     dt,
-			Notification: specific, // cfgchange, gpio status, vitalstats
-		}
-	}
-	/*
-		CfgChange: is the specific notification denoting the change in the device configuration  */
-	CfgChange = func(schd *aquacfg.Schedule) DeviceNotifcn {
-		return &cfgChangeNotification{
-			New: schd,
-		}
-	}
-	/*
-		Pinstatus : is the state opf the pins and gets encapsulated in the GPIO status
-		ConnName	: name of the connection ex: Aquaponics pump -I
-		ConnType	: Type of the connection, analogue, digital
-		ConnPin		: number id of the pin
-		PinState	: state of the pin high or low */
-	PinStatus = func(name string, typ GPIOConnection, pin int, state GPIOPinState) *Pinstat {
-		return &Pinstat{
-			ConnName: name,
-			ConnType: typ,
-			ConnPin:  pin,
-			PinState: state,
-		}
-	}
-	/*
-		GpioStatus: overall gpio status , collates the pin status at any given point in tim
-	*/
-	// BUG: right in the signature of the interface I have used a private variable call - this needs to change
-	// Pinstat is not accessible to outside this package
-	GpioStatus = func(pins ...*Pinstat) DeviceNotifcn {
-		return &gpioStatus{
-			AllPins: pins,
-		}
-	}
-	/*
-		VitalStats: constructor function for vital stats of the device
-		All the parameters are bash command outputs that go into making the object
-		Arguments as string are then converted to appropriate boolean flags
-
-		aqpsrv: echo -n $(systemctl is-active service)
-		service active status : "active" ==true, else false
-
-		online: echo -n $(curl -Is https://www.google.com | head -n 1)
-		online  == HTTP/2 200 then true else false.
-
-		vmstat: echo -n $(vmstat | awk '{print $12" "$13}' | tail -1)
-		gives space separated usage in % for user &system ex: 16 7
-
-		uptime: echo -n $(uptime | awk '{print $3" "$4" "$5}'| rev | cut -c 2- | rev)
-		gives the uptime of the cpu
-
-		dt = time.Now()
-		local time on the device
-	*/
-	VitalStats = func(aqpsrv, cfgwatchsrv, online, vmstat, uptime string) DeviceNotifcn {
-		service_status := func(status string) bool {
-			return status == "active"
-		}
-		return &vitalStats{
-			AquaponeSrv: service_status(aqpsrv),
-			CfgwatchSrv: service_status(cfgwatchsrv),
-			Online: func(cmdop string) bool {
-				return cmdop == "HTTP/2 200"
-			}(online),
-			FreeCPU: func(vmstatop string) int {
-				bits := strings.Split(vmstatop, " ")
-				if len(bits) != 2 {
-					return -1 // error condition
-				}
-				usage := 0
-				for _, b := range bits {
-					val, err := strconv.ParseInt(b, 10, 32)
-					if err != nil {
-						return -1 //error condition
-					}
-					usage += int(val)
-				}
-				return 100 - usage
-			}(vmstat),
-			CPUUpTime: uptime,
-		}
-	}
 )
 
 /*
@@ -107,10 +12,11 @@ DeviceData: positively identifies the device. The service as such is ignostic to
 Plus with any other notification this has to be included. Device data now includes the date as well.
 */
 type anyNotification struct {
-	DeviceName   string        `json:"device_name"` // name of the device
-	DeviceMac    string        `json:"device_mac"`  // mac id of the device
-	CurrDate     time.Time     // current date on the device
-	Notification DeviceNotifcn `json:"notification"` // specific notification - gpiostatus/cfgchng/vital stats
+	DeviceName   string            // name of the device as it appears in the registration
+	DeviceMac    string            // mac id of the device,
+	TelegGrpID   string            // telegram grp id - destination of the notification
+	CurrDate     time.Time         `json:"dttm"` // time on the device the notification was generated
+	Notification TelegNotification `json:"notification"`
 }
 
 func (dd *anyNotification) ToMessageTxt() (string, error) {
@@ -121,6 +27,19 @@ func (dd *anyNotification) ToMessageTxt() (string, error) {
 	}
 	result := fmt.Sprintf("*%s*\n_%s_\n%s\n----\n%s", dd.DeviceName, dd.DeviceMac, dd.CurrDate.Local().Format(time.RFC822), notifcn)
 	return result, nil
+}
+func (dd *anyNotification) SetGrpId(gid string) TelegNotification {
+	dd.TelegGrpID = gid
+	return dd
+}
+func (dd *anyNotification) SetNotification(internal TelegNotification) DeviceNotifcn {
+	dd.Notification = internal
+	return dd
+}
+
+func (dd *anyNotification) ToBotMessage(mode string) *BotMessage {
+	msg, _ := dd.ToMessageTxt()
+	return &BotMessage{ChatID: dd.TelegGrpID, Txt: msg, ParseMode: mode}
 }
 
 /* ++++++++++++++++++++++++++++++++++++++++++++++++ */

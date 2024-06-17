@@ -6,12 +6,12 @@ GET https://api.telegram.org/bot7003243457:AAFdkeOEWTXakLxz7HjyJFBkJiL8ME-tZvE/g
 
 
 ### Seding a simple configuration change notification 
-POST http://localhost:8080/api/devices/b8:27:eb:a5:be:48/notifications?typ=cfgchange
+POST http://aqua.eensymachines.in:30004/api/devices/b8:27:eb:43:59:f8/notifications?typ=cfgchange
 Content-Type: application/json
 
 {
-       "device_name":"Aquaponics pump control-I, Saidham",
-       "device_mac":"b8:27:eb:a5:be:48",
+       "device_name":"Test device @ Tejaura",
+       "device_mac":"b8:27:eb:43:59:f8",
        "dt":"2006-01-02 15:04:05",
        "notification":{
             "new":{
@@ -25,7 +25,9 @@ Content-Type: application/json
 
 
 ### Simple request to notify of the gpio status
-POST http://localhost:8080/api/devices/b8:27:eb:a5:be:48/notifications?typ=gpiostat
+# POST http://localhost:8080/api/devices/b8:27:eb:a5:be:48/notifications?typ=gpiostat
+POST http://aqua.eensymachines.in:30004/api/devices/b8:27:eb:43:59:f8/notifications?typ=gpiostat
+
 Content-Type: application/json
 
 {

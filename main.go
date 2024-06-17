@@ -31,10 +31,10 @@ var (
 	}
 )
 
-type BotMessage struct {
-	ChatID    string `json:"chat_id"`
-	Txt       string `json:"text"`
-	ParseMode string `json:"parse_mode"` // markdown or html - message then can be parse accordigly
+type DeviceDetails struct {
+	GrpID string `json:"telggrpid"`
+	Name  string `json:"name"`
+	Mac   string `json:"mac"`
 }
 
 func init() {
@@ -84,13 +84,11 @@ func init() {
 	}
 }
 
-/*
-	FetchDeviceDetails : to know the details of device specifically the telegram group to which notifications are to be sent
-
-makes a simple http call to the devicereg u-service, incase the call fails this shall abort any further calls to handlers
-NOTE: for extensions in the future there has to be a fallback group that the notifications should be logged to. Or perhaps we can think of loggging
-all errors in a group , notifications on a grop, logs to a group as well.
-*/
+// FetchDeviceDetails : gets the details of a registered device relevant to notifications.
+// device name
+// mac id
+// telegram grp id where the notification is destined to.
+// This will construct a base notification and then send it downstream to handle for specific notification
 func FetchDeviceDetails(c *gin.Context) {
 	cl := &http.Client{
 		Timeout: 3 * time.Second,
@@ -109,12 +107,21 @@ func FetchDeviceDetails(c *gin.Context) {
 		return
 	}
 	resp, err := cl.Do(req)
-	if err != nil {
-		err = fmt.Errorf("failed request to ge device details %d:%s", resp.StatusCode, err)
-		httperr.HttpErrOrOkDispatch(c, httperr.ErrGatewayConnect(err), log.WithFields(log.Fields{
-			"stack": "FetchDeviceDetails/Do",
-		}))
-		return
+	if err != nil || resp.StatusCode != http.StatusOK {
+		if resp.StatusCode == http.StatusNotFound {
+			err = fmt.Errorf("no device for mac id found %s: %s", c.Param("devid"), err)
+			httperr.HttpErrOrOkDispatch(c, httperr.ErrResourceNotFound(err), log.WithFields(log.Fields{
+				"stack":  "FetchDeviceDetails/Do",
+				"mac_id": c.Param("devid"),
+			}))
+			return
+		} else {
+			err = fmt.Errorf("failed request to ge device details %d:%s", resp.StatusCode, err)
+			httperr.HttpErrOrOkDispatch(c, httperr.ErrGatewayConnect(err), log.WithFields(log.Fields{
+				"stack": "FetchDeviceDetails/Do",
+			}))
+			return
+		}
 	}
 	log.WithFields(log.Fields{
 		"status_code": resp.StatusCode,
@@ -127,9 +134,9 @@ func FetchDeviceDetails(c *gin.Context) {
 		}))
 		return
 	}
-	result := struct {
-		GrpID string `json:"telggrpid"`
-	}{}
+	// Device details - name, mac, telegram grp that notificaiton is destined to, all are in this
+	// such device details are sought from devicereg service on the cloud.
+	result := DeviceDetails{}
 	err = json.Unmarshal(byt, &result)
 	if err != nil {
 		err = fmt.Errorf("error unmarshalling response body %s", err)
@@ -140,15 +147,32 @@ func FetchDeviceDetails(c *gin.Context) {
 	}
 	log.WithFields(log.Fields{
 		"grp_id": result.GrpID,
+		"name":   result.Name,
+		"macid":  result.Mac,
 	}).Debug("Group id the notification is posted to")
-	c.Set("GRP_ID", result.GrpID)
-	c.Next() // downstream handlers to take care of this
+	// TODO: basic device notification can be made here, since the device details are available
+	// But for now we havent go any means of pushing the specific notificaiton attributes besides the constructor
+	not := models.Notification(result.Name, result.Mac, time.Now()).SetGrpId(result.GrpID)
+	c.Set("notification", not) //sending the device details.
+	c.Next()                   // downstream handlers to take care of this
 
 }
 func HndlDeviceNotifics(c *gin.Context) {
+	/* base notification == *anyNotification.
+	base details of the notification. - except the time and the specific notification that we receive from the device below */
+	val, _ := c.Get("notification") // from the previous handler
+	not := val.(models.DeviceNotifcn)
+	if not == nil { // safety -incase you forgot to attach the handler in the router itself
+		httperr.HttpErrOrOkDispatch(c, httperr.ErrResourceNotFound(fmt.Errorf("device for the mac id wasnt found")), log.WithFields(log.Fields{
+			"stack": "HndlDeviceNotifics",
+		}))
+		return
+	}
+	/* --------------------  Getting the specific notification
+	Please see this is an empty default specific notification object*/
+	var specificNot models.TelegNotification // specific notification
 	typOfNotify := c.Query("typ")
-	var not models.DeviceNotifcn
-	/* Figuring out the type of notificaiton and making the object accordingly*/
+
 	if typOfNotify == "" {
 		// incase when the hhandler does not know the query params to determine which type of notification
 		httperr.HttpErrOrOkDispatch(c, httperr.ErrContxParamMissing(fmt.Errorf("not enough query params in the request")), log.WithFields(log.Fields{
@@ -157,16 +181,17 @@ func HndlDeviceNotifics(c *gin.Context) {
 		return
 	} else if typOfNotify == "cfgchange" {
 		log.Debug("Notifying a configuration change")
-		not = models.Notification("", "", time.Now(), models.CfgChange(&aquacfg.Schedule{})) // onto which the payload would be unmarshalled
-
+		specificNot = models.CfgChange(&aquacfg.Schedule{})
 	} else if typOfNotify == "gpiostat" {
 		log.Debug("Gpio status notification")
-		not = models.Notification("", "", time.Now(), models.GpioStatus(&models.Pinstat{})) // onto which the payload would be unmarshalled
+		specificNot = models.GpioStatus(&models.Pinstat{})
 	} else if typOfNotify == "vitals" {
 		log.Debug("Vitals status notification")
-		not = models.Notification("", "", time.Now(), models.VitalStats("", "", "", "", "")) // onto which the payload would be unmarshalled
+		specificNot = models.VitalStats("", "", "", "", "") // onto which the payload would be unmarshalled
 	}
-	/* Reading the request body and that is agnostic of which notification it is */
+	not.SetNotification(specificNot) // notification object is complete
+
+	/* -------------------- Reading the payload, details of the notification from the device, time */
 	byt, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		httperr.HttpErrOrOkDispatch(c, httperr.ErrBinding(err), log.WithFields(log.Fields{
@@ -174,27 +199,24 @@ func HndlDeviceNotifics(c *gin.Context) {
 		}))
 		return
 	}
-	err = json.Unmarshal(byt, &not)
+	err = json.Unmarshal(byt, not)
 	if err != nil {
 		httperr.HttpErrOrOkDispatch(c, httperr.ErrBinding(err), log.WithFields(log.Fields{
 			"stack": "HndlDeviceNotifics",
 		}))
 		return
 	}
-	/* Preparing the notification to be sent across to telegram */
-	msg, _ := not.ToMessageTxt()
+	/* Convert from notification to BotMessage and prepare to send across to telegram  */
+	msg, _ := not.(models.TelegNotification).ToMessageTxt()
 	log.WithFields(log.Fields{
 		"msg_txt": msg,
 	}).Debug("Notification message text")
-	grpId, _ := c.Get("GRP_ID") // from the previous handler we have the telegram grp id that we need to post the notification to
-	bm := BotMessage{ChatID: grpId.(string), Txt: msg, ParseMode: "markdown"}
+	bm := not.ToBotMessage("markdown") // *BotMessage
 	byt, _ = json.Marshal(bm)
 	url := fmt.Sprintf("%s%s/sendMessage", os.Getenv("BOT_BASEURL"), os.Getenv("BOT_TOK"))
 	log.WithFields(log.Fields{
 		"telegram_url": url,
 	}).Debug("Telegram post url ready..")
-
-	/* Sending the notificaiton  */
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(byt))
 	if err != nil {
 		httperr.HttpErrOrOkDispatch(c, httperr.ErrGatewayConnect(fmt.Errorf("failed to form new post request %s", err)), log.WithFields(log.Fields{
@@ -202,15 +224,16 @@ func HndlDeviceNotifics(c *gin.Context) {
 		}))
 		return
 	}
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Type", "application/json") // never forget this
 	cl := &http.Client{Timeout: 5 * time.Second}
-	resp, err := cl.Do(req)
+	resp, err := cl.Do(req) // Sends the notification 
 	if err != nil || resp.StatusCode != http.StatusOK {
 		httperr.HttpErrOrOkDispatch(c, httperr.ErrGatewayConnect(fmt.Errorf("failed to post notification message to telegram server %s", err)), log.WithFields(log.Fields{
 			"stack": "HndlDeviceNotifics/typ=cfgchange",
 		}))
 		return
 	}
+	/* Done! we are ready to return 200 ok*/
 	log.Debug("Telegram message posted..")
 	c.AbortWithStatusJSON(http.StatusOK, gin.H{})
 }
