@@ -3,7 +3,7 @@ name: TelegNotify-Pipe
 on:
   push:
     branches:
-      - v.nightly.0
+      - dev
 jobs:
   integ_testing:
     runs-on: ubuntu-latest
