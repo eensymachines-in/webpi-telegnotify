@@ -17,6 +17,7 @@ import (
 
 func TestApi(t *testing.T) {
 	cl := &http.Client{Timeout: 5 * time.Second}
+	/* NOTE: we test on github actions and when running inside the container loopback url is the same as http:localost */
 	baseurl := "http://localhost:8080/api/devices/b8:27:eb:a5:be:48/notifications"
 	type payload struct {
 		Dttm         time.Time                `json:"dttm"`
@@ -41,6 +42,28 @@ func TestApi(t *testing.T) {
 		resp, err := cl.Do(req)
 		assert.Nil(t, err, "unexpected error when executing the request, do you have access to the server ?")
 		assert.Equal(t, resp.StatusCode, http.StatusBadRequest, "Unepxected response code from server")
+	})
+
+	t.Run("missing_device_reg", func(t *testing.T) {
+		// this is the case of missing mac id - and here we shall get 404 not  found
+		url := fmt.Sprintf("%s/?typ=invalidparam", "http://localhost:8080/api/devices/d2:8c:c8:d3:89:69/notifications")
+		pl := payload{
+			Dttm: time.Now(),
+			Notification: models.CfgChange(&aquacfg.Schedule{
+				Config:   1,
+				TickAt:   "11:30",
+				PulseGap: 100,
+				Interval: 500,
+			}),
+		}
+		byt, err := json.Marshal(pl)
+		assert.Nil(t, err, "Unexpected error when marshaling bot message")
+		buff := bytes.NewBuffer(byt)
+		req, err := http.NewRequest("POST", url, buff)
+		assert.Nil(t, err, "Unexpected error when forming the request")
+		resp, err := cl.Do(req)
+		assert.Nil(t, err, "unexpected error when executing the request, do you have access to the server ?")
+		assert.Equal(t, resp.StatusCode, http.StatusNotFound, "Unepxected response code from server")
 	})
 	// NOTE: there isnt a possibility of a bad configuration - since the update is tightly guarded by cfgwatch
 	t.Run("cfg_change", func(t *testing.T) {
