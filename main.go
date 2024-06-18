@@ -152,6 +152,13 @@ func FetchDeviceDetails(c *gin.Context) {
 	}).Debug("Group id the notification is posted to")
 	// TODO: basic device notification can be made here, since the device details are available
 	// But for now we havent go any means of pushing the specific notificaiton attributes besides the constructor
+	if result.GrpID == "" { // the device is registered with no telegram group - this is missing context param
+		err = fmt.Errorf("device registration is incomplete, has no telegram id")
+		httperr.HttpErrOrOkDispatch(c, httperr.ErrResourceNotFound(err), log.WithFields(log.Fields{
+			"stack": "FetchDeviceDetails/result.GrpID",
+		}))
+		return
+	}
 	not := models.Notification(result.Name, result.Mac, time.Now()).SetGrpId(result.GrpID)
 	c.Set("notification", not) //sending the device details.
 	c.Next()                   // downstream handlers to take care of this
@@ -226,7 +233,7 @@ func HndlDeviceNotifics(c *gin.Context) {
 	}
 	req.Header.Set("Content-Type", "application/json") // never forget this
 	cl := &http.Client{Timeout: 5 * time.Second}
-	resp, err := cl.Do(req) // Sends the notification 
+	resp, err := cl.Do(req) // Sends the notification
 	if err != nil || resp.StatusCode != http.StatusOK {
 		httperr.HttpErrOrOkDispatch(c, httperr.ErrGatewayConnect(fmt.Errorf("failed to post notification message to telegram server %s", err)), log.WithFields(log.Fields{
 			"stack": "HndlDeviceNotifics/typ=cfgchange",

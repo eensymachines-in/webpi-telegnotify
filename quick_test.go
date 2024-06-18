@@ -75,6 +75,30 @@ func TestApi(t *testing.T) {
 		assert.Nil(t, err, "unexpected error when executing the request, do you have access to the server ?")
 		assert.Equal(t, resp.StatusCode, http.StatusNotFound, "Unepxected response code from server")
 	})
+	// c5:8f:65:59:cb:fe - see this test data in the database, the telegrpid is empty
+	t.Run("no_teleg_grp", func(t *testing.T) {
+		// this is thhe case when the mac though is found the device registration is not complete
+		// telegram group id is not found - this will have to be 404
+		url := fmt.Sprintf("%s/?typ=cfgchange", "http://localhost:8080/api/devices/c5:8f:65:59:cb:fe/notifications")
+		pl := payload{
+			Dttm: time.Now(),
+			Notification: models.CfgChange(&aquacfg.Schedule{
+				Config:   1,
+				TickAt:   "11:30",
+				PulseGap: 100,
+				Interval: 500,
+			}),
+		}
+		byt, err := json.Marshal(pl)
+		assert.Nil(t, err, "Unexpected error when marshaling bot message")
+		buff := bytes.NewBuffer(byt)
+		req, err := http.NewRequest("POST", url, buff)
+		assert.Nil(t, err, "Unexpected error when forming the request")
+		resp, err := cl.Do(req)
+		assert.Nil(t, err, "unexpected error when executing the request, do you have access to the server ?")
+		assert.Equal(t, resp.StatusCode, http.StatusNotFound, "Unepxected response code from server")
+	})
+
 	// NOTE: there isnt a possibility of a bad configuration - since the update is tightly guarded by cfgwatch
 	t.Run("cfg_change", func(t *testing.T) {
 		url := fmt.Sprintf("%s/?typ=cfgchange", baseurl)
