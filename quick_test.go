@@ -45,8 +45,18 @@ func TestApi(t *testing.T) {
 	})
 
 	t.Run("missing_device_reg", func(t *testing.T) {
+		// Whhen the payload itself is nil
+		url := fmt.Sprintf("%s/?typ=cfgchange", "http://localhost:8080/api/devices/b8:27:eb:a5:be:48/notifications")
+		req, err := http.NewRequest("POST", url, nil)
+		assert.Nil(t, err, "Unexpected error when forming the request")
+		resp, err := cl.Do(req)
+		assert.Nil(t, err, "unexpected error when executing the request, do you have access to the server ?")
+		assert.Equal(t, resp.StatusCode, http.StatusBadRequest, "Unepxected response code from server")
+	})
+
+	t.Run("invalid_payload", func(t *testing.T) {
 		// this is the case of missing mac id - and here we shall get 404 not  found
-		url := fmt.Sprintf("%s/?typ=invalidparam", "http://localhost:8080/api/devices/d2:8c:c8:d3:89:69/notifications")
+		url := fmt.Sprintf("%s/?typ=cfgchange", "http://localhost:8080/api/devices/d2:8c:c8:d3:89:69/notifications")
 		pl := payload{
 			Dttm: time.Now(),
 			Notification: models.CfgChange(&aquacfg.Schedule{
