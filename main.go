@@ -207,14 +207,6 @@ func HndlDeviceNotifics(c *gin.Context) {
 		}))
 		return
 	}
-	// BUG:
-	/*
-		pl := payload{
-			Dttm:         time.Now(),
-			Notification: nil,
-		}
-		this payload despite being invalid does still pass thru
-	*/
 	err = json.Unmarshal(byt, not)
 	if err != nil {
 		httperr.HttpErrOrOkDispatch(c, httperr.ErrBinding(err), log.WithFields(log.Fields{
