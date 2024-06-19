@@ -56,15 +56,10 @@ func TestApi(t *testing.T) {
 
 	t.Run("invalid_payload", func(t *testing.T) {
 		// this is the case of missing mac id - and here we shall get 404 not  found
-		url := fmt.Sprintf("%s/?typ=cfgchange", "http://localhost:8080/api/devices/d2:8c:c8:d3:89:69/notifications")
+		url := fmt.Sprintf("%s/?typ=cfgchange", baseurl)
 		pl := payload{
-			Dttm: time.Now(),
-			Notification: models.CfgChange(&aquacfg.Schedule{
-				Config:   1,
-				TickAt:   "11:30",
-				PulseGap: 100,
-				Interval: 500,
-			}),
+			Dttm:         time.Now(),
+			Notification: nil,
 		}
 		byt, err := json.Marshal(pl)
 		assert.Nil(t, err, "Unexpected error when marshaling bot message")
@@ -73,7 +68,7 @@ func TestApi(t *testing.T) {
 		assert.Nil(t, err, "Unexpected error when forming the request")
 		resp, err := cl.Do(req)
 		assert.Nil(t, err, "unexpected error when executing the request, do you have access to the server ?")
-		assert.Equal(t, resp.StatusCode, http.StatusNotFound, "Unepxected response code from server")
+		assert.Equal(t, resp.StatusCode, http.StatusBadRequest, "Unepxected response code from server")
 	})
 	// c5:8f:65:59:cb:fe - see this test data in the database, the telegrpid is empty
 	t.Run("no_teleg_grp", func(t *testing.T) {
