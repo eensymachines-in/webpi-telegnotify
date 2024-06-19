@@ -207,6 +207,14 @@ func HndlDeviceNotifics(c *gin.Context) {
 		}))
 		return
 	}
+	// BUG:
+	/*
+		pl := payload{
+			Dttm:         time.Now(),
+			Notification: nil,
+		}
+		this payload despite being invalid does still pass thru
+	*/
 	err = json.Unmarshal(byt, not)
 	if err != nil {
 		httperr.HttpErrOrOkDispatch(c, httperr.ErrBinding(err), log.WithFields(log.Fields{
@@ -217,6 +225,13 @@ func HndlDeviceNotifics(c *gin.Context) {
 	/* Convert from notification to BotMessage and prepare to send across to telegram  */
 
 	bm := not.ToBotMessage("markdown") // *BotMessage
+	if bm == nil {
+		// notification wasnt set corrrectly or it was set to nil
+		httperr.HttpErrOrOkDispatch(c, httperr.ErrValidation(fmt.Errorf("could not get bot message object from notification, check if nil and then try again")), log.WithFields(log.Fields{
+			"stack": "HndlDeviceNotifics",
+		}))
+		return
+	}
 	byt, _ = json.Marshal(bm)
 	url := fmt.Sprintf("%s%s/sendMessage", os.Getenv("BOT_BASEURL"), os.Getenv("BOT_TOK"))
 	log.WithFields(log.Fields{

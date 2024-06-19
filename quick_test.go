@@ -41,7 +41,7 @@ func TestApi(t *testing.T) {
 		assert.Nil(t, err, "Unexpected error when forming the request")
 		resp, err := cl.Do(req)
 		assert.Nil(t, err, "unexpected error when executing the request, do you have access to the server ?")
-		assert.Equal(t, resp.StatusCode, http.StatusBadRequest, "Unepxected response code from server")
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode, "Unepxected response code from server")
 	})
 
 	t.Run("missing_device_reg", func(t *testing.T) {
@@ -51,7 +51,7 @@ func TestApi(t *testing.T) {
 		assert.Nil(t, err, "Unexpected error when forming the request")
 		resp, err := cl.Do(req)
 		assert.Nil(t, err, "unexpected error when executing the request, do you have access to the server ?")
-		assert.Equal(t, resp.StatusCode, http.StatusBadRequest, "Unepxected response code from server")
+		assert.Equal(t, http.StatusBadRequest, http.StatusBadRequest, resp.StatusCode, "Unepxected response code from server")
 	})
 
 	t.Run("missing_mac", func(t *testing.T) {
@@ -68,7 +68,7 @@ func TestApi(t *testing.T) {
 		assert.Nil(t, err, "Unexpected error when forming the request")
 		resp, err := cl.Do(req)
 		assert.Nil(t, err, "unexpected error when executing the request, do you have access to the server ?")
-		assert.Equal(t, resp.StatusCode, http.StatusNotFound, "Unepxected response code from server")
+		assert.Equal(t, http.StatusNotFound, resp.StatusCode, "Unepxected response code from server")
 	})
 	t.Run("invalid_payload", func(t *testing.T) {
 		// case of invalid payload
@@ -84,7 +84,7 @@ func TestApi(t *testing.T) {
 		assert.Nil(t, err, "Unexpected error when forming the request")
 		resp, err := cl.Do(req)
 		assert.Nil(t, err, "unexpected error when executing the request, do you have access to the server ?")
-		assert.Equal(t, resp.StatusCode, http.StatusBadRequest, "Unepxected response code from server")
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode, "Unepxected response code from server")
 	})
 	// c5:8f:65:59:cb:fe - see this test data in the database, the telegrpid is empty
 	t.Run("no_teleg_grp", func(t *testing.T) {
@@ -107,7 +107,7 @@ func TestApi(t *testing.T) {
 		assert.Nil(t, err, "Unexpected error when forming the request")
 		resp, err := cl.Do(req)
 		assert.Nil(t, err, "unexpected error when executing the request, do you have access to the server ?")
-		assert.Equal(t, resp.StatusCode, http.StatusNotFound, "Unepxected response code from server")
+		assert.Equal(t, http.StatusNotFound, resp.StatusCode, "Unepxected response code from server")
 	})
 
 	// NOTE: there isnt a possibility of a bad configuration - since the update is tightly guarded by cfgwatch
@@ -130,7 +130,7 @@ func TestApi(t *testing.T) {
 		assert.Nil(t, err, "Unexpected error when forming the request")
 		resp, err := cl.Do(req)
 		assert.Nil(t, err, "unexpected error when executing the request, do you have access to the server ?")
-		assert.Equal(t, resp.StatusCode, http.StatusOK, "Unepxected response code from server")
+		assert.Equal(t, http.StatusOK, resp.StatusCode, "Unepxected response code from server")
 	})
 
 	t.Run("GPIO_report_status", func(t *testing.T) {
@@ -146,7 +146,7 @@ func TestApi(t *testing.T) {
 		assert.Nil(t, err, "Unexpected error when forming the request")
 		resp, err := cl.Do(req)
 		assert.Nil(t, err, "unexpected error when executing the request, do you have access to the server ?")
-		assert.Equal(t, resp.StatusCode, http.StatusOK, "Unepxected response code from server")
+		assert.Equal(t, http.StatusOK, resp.StatusCode, "Unepxected response code from server")
 	})
 
 	t.Run("vital_status", func(t *testing.T) {
@@ -163,7 +163,7 @@ func TestApi(t *testing.T) {
 		assert.Nil(t, err, "Unexpected error when forming the request")
 		resp, err := cl.Do(req)
 		assert.Nil(t, err, "unexpected error when executing the request, do you have access to the server ?")
-		assert.Equal(t, resp.StatusCode, http.StatusOK, "Unepxected response code from server")
+		assert.Equal(t, http.StatusOK, resp.StatusCode, "Unepxected response code from server")
 	})
 }
 

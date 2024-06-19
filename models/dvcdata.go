@@ -38,6 +38,9 @@ func (dd *anyNotification) SetNotification(internal TelegNotification) DeviceNot
 }
 
 func (dd *anyNotification) ToBotMessage(mode string) *BotMessage {
+	if dd.Notification == nil { // incase the specific notification is nil there is no point in calling toMessageTxt()
+		return nil
+	}
 	msg, _ := dd.ToMessageTxt()
 	return &BotMessage{ChatID: dd.TelegGrpID, Txt: msg, ParseMode: mode}
 }
