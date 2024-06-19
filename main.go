@@ -167,6 +167,8 @@ func FetchDeviceDetails(c *gin.Context) {
 }
 
 // HndlDeviceNotifics : specifics of the notification - cfgchange , gpio status, vitals
+// From the query param it shall create a specific notification object that can be fitted onto the notification from the previous handler.
+
 func HndlDeviceNotifics(c *gin.Context) {
 	/* base notification == *anyNotification.
 	base details of the notification. - except the time and the specific notification that we receive from the device below */
@@ -190,7 +192,7 @@ func HndlDeviceNotifics(c *gin.Context) {
 	}
 	specificNot, exists := typNotifics[typOfNotify]
 	if !exists {
-		httperr.HttpErrOrOkDispatch(c, httperr.ErrContxParamMissing(fmt.Errorf("not enough query params in the request")), log.WithFields(log.Fields{
+		httperr.HttpErrOrOkDispatch(c, httperr.ErrValidation(fmt.Errorf("not enough query params in the request")), log.WithFields(log.Fields{
 			"typ": typOfNotify,
 		}))
 		return
@@ -213,10 +215,7 @@ func HndlDeviceNotifics(c *gin.Context) {
 		return
 	}
 	/* Convert from notification to BotMessage and prepare to send across to telegram  */
-	msg, _ := not.(models.TelegNotification).ToMessageTxt()
-	log.WithFields(log.Fields{
-		"msg_txt": msg,
-	}).Debug("Notification message text")
+
 	bm := not.ToBotMessage("markdown") // *BotMessage
 	byt, _ = json.Marshal(bm)
 	url := fmt.Sprintf("%s%s/sendMessage", os.Getenv("BOT_BASEURL"), os.Getenv("BOT_TOK"))
