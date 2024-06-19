@@ -54,8 +54,24 @@ func TestApi(t *testing.T) {
 		assert.Equal(t, resp.StatusCode, http.StatusBadRequest, "Unepxected response code from server")
 	})
 
+	t.Run("missing_mac", func(t *testing.T) {
+		// case of missing mac id
+		url := fmt.Sprintf("%s/?typ=cfgchange", "http://localhost:8080/api/devices/b1:34:fg:a4:vg:50/notifications")
+		pl := payload{
+			Dttm:         time.Now(),
+			Notification: nil,
+		}
+		byt, err := json.Marshal(pl)
+		assert.Nil(t, err, "Unexpected error when marshaling bot message")
+		buff := bytes.NewBuffer(byt)
+		req, err := http.NewRequest("POST", url, buff)
+		assert.Nil(t, err, "Unexpected error when forming the request")
+		resp, err := cl.Do(req)
+		assert.Nil(t, err, "unexpected error when executing the request, do you have access to the server ?")
+		assert.Equal(t, resp.StatusCode, http.StatusNotFound, "Unepxected response code from server")
+	})
 	t.Run("invalid_payload", func(t *testing.T) {
-		// this is the case of missing mac id - and here we shall get 404 not  found
+		// case of invalid payload
 		url := fmt.Sprintf("%s/?typ=cfgchange", baseurl)
 		pl := payload{
 			Dttm:         time.Now(),
