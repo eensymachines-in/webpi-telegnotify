@@ -84,16 +84,18 @@ func init() {
 	}
 }
 
-// FetchDeviceDetails : gets the details of a registered device relevant to notifications.
-// device name
-// mac id
-// telegram grp id where the notification is destined to.
-// This will construct a base notification and then send it downstream to handle for specific notification
+// FetchDeviceDetails : From the URL params using the device mac, this queries the devicereg-service
+/*
+Gets the device details - name, telegram grp id - notification uses the same to be specific
+Incase the mac id in the URL param is not found registered will result in error, likewise incase the device details are invalid or the group id is found missing this will respond withh error
+
+	route.POST("", FetchDeviceDetails, HndlDeviceNotifics)
+	// notice how FetchDeviceDetails preceeds HndlDeviceNotifics
+*/
 func FetchDeviceDetails(c *gin.Context) {
 	cl := &http.Client{
 		Timeout: 3 * time.Second,
 	}
-	// TODO: somehow we need a well formed url
 	url := fmt.Sprintf("%s/%s", os.Getenv("DEVICEREG_URL"), c.Param("devid"))
 	log.WithFields(log.Fields{
 		"url": url,
@@ -150,8 +152,7 @@ func FetchDeviceDetails(c *gin.Context) {
 		"name":   result.Name,
 		"macid":  result.Mac,
 	}).Debug("Group id the notification is posted to")
-	// TODO: basic device notification can be made here, since the device details are available
-	// But for now we havent go any means of pushing the specific notificaiton attributes besides the constructor
+	// Its ok to not have a device name but group id needs to registered
 	if result.GrpID == "" { // the device is registered with no telegram group - this is missing context param
 		err = fmt.Errorf("device registration is incomplete, has no telegram id")
 		httperr.HttpErrOrOkDispatch(c, httperr.ErrResourceNotFound(err), log.WithFields(log.Fields{
@@ -164,6 +165,8 @@ func FetchDeviceDetails(c *gin.Context) {
 	c.Next()                   // downstream handlers to take care of this
 
 }
+
+// HndlDeviceNotifics : specifics of the notification - cfgchange , gpio status, vitals
 func HndlDeviceNotifics(c *gin.Context) {
 	/* base notification == *anyNotification.
 	base details of the notification. - except the time and the specific notification that we receive from the device below */
@@ -180,21 +183,17 @@ func HndlDeviceNotifics(c *gin.Context) {
 	var specificNot models.TelegNotification // specific notification
 	typOfNotify := c.Query("typ")
 
-	if typOfNotify == "" {
-		// incase when the hhandler does not know the query params to determine which type of notification
+	typNotifics := map[string]models.TelegNotification{
+		"cfgchange": models.CfgChange(&aquacfg.Schedule{}),
+		"gpiostat":  models.GpioStatus(&models.Pinstat{}),
+		"vitals":    models.VitalStats("", "", "", "", ""),
+	}
+	specificNot, exists := typNotifics[typOfNotify]
+	if !exists {
 		httperr.HttpErrOrOkDispatch(c, httperr.ErrContxParamMissing(fmt.Errorf("not enough query params in the request")), log.WithFields(log.Fields{
 			"typ": typOfNotify,
 		}))
 		return
-	} else if typOfNotify == "cfgchange" {
-		log.Debug("Notifying a configuration change")
-		specificNot = models.CfgChange(&aquacfg.Schedule{})
-	} else if typOfNotify == "gpiostat" {
-		log.Debug("Gpio status notification")
-		specificNot = models.GpioStatus(&models.Pinstat{})
-	} else if typOfNotify == "vitals" {
-		log.Debug("Vitals status notification")
-		specificNot = models.VitalStats("", "", "", "", "") // onto which the payload would be unmarshalled
 	}
 	not.SetNotification(specificNot) // notification object is complete
 
