@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: ctn-gin
-          image: kneerunjun/telegnotify:v0.0.0
+          image: kneerunjun/telegnotify:v0.1.0
           env:
             - name: BOT_BASEURL
               value: https://api.telegram.org/bot
